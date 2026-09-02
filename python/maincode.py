@@ -8,8 +8,8 @@ import csv
 from datetime import datetime
 
 # ================= TELEGRAM CONFIG =================
-TELEGRAM_API_TOKEN = '8176836564:AAHvJ4kzmchFaYoBhBXSsSSAK8YubHcighQ'
-CHAT_ID = '5517493014'
+TELEGRAM_API_TOKEN = 'token'
+CHAT_ID = 'id'
 
 # ================= SERIAL CONFIG ===================
 SERIAL_PORT = 'COM3'
