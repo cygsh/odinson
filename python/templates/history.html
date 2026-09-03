@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odinson Vibration Monitor - View Past Data</title>
+    <style>
+        :root {
+            --bg: #28282B;
+            --bg-panel: #323236;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #ffffff;
+            --border: #4a4a4a;
+            --success: #4caf50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent), #cccccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-back {
+            display: inline-block;
+            margin: 1rem 0;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-back:hover {
+            text-decoration: underline;
+        }
+
+        .controls-panel {
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem auto;
+            max-width: 900px;
+            border: 1px solid var(--border);
+        }
+
+        .controls-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .controls-panel h2::before {
+            content: '📊';
+        }
+
+        .date-range {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .date-range label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .date-range input[type="date"] {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .btn-load {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background: var(--accent);
+            color: var(--bg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-load:hover {
+            background: #e6e6e6;
+        }
+
+        .graph-container {
+            position: relative;
+            height: 300px;
+            margin: 2rem auto;
+            max-width: 900px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        #historyCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .navigation-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-panel);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--border);
+            color: var(--accent);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-family: 'Courier New', monospace;
+            color: var(--text-muted);
+        }
+
+        .data-table-container {
+            margin: 2rem auto;
+            max-width: 900px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-panel);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .data-table td {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .data-table tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .export-section {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .export-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            background: var(--success);
+            color: var(--bg);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .export-btn:hover {
+            background: #43a047;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1.5rem auto;
+            max-width: 900px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .status-item {
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .status-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-value.loaded { color: var(--success); }
+        .status-value.error { color: #ff6b6b; }
+        .status-value.loading { color: #ffd93d; }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .controls-panel {
+                padding: 1rem;
+            }
+            .date-range {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .navigation-controls {
+                flex-direction: column;
+            }
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>Odinson</h1>
+        <p class="subtitle">View Past Vibration Data</p>
+        <a href="/" class="nav-back">← Back to Live Monitor</a>
+    </header>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+        <h2>Data Selection</h2>
+        <div class="date-range">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+            <button class="btn-load" id="loadDataBtn">Load Data</button>
+        </div>
+    </div>
+
+    <!-- Graph Container -->
+    <div class="graph-container">
+        <canvas id="historyCanvas"></canvas>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation-controls">
+        <button class="nav-btn" id="prevPageBtn">Previous Page</button>
+        <span class="page-info" id="pageInfo">Page: 0 / 0</span>
+        <button class="nav-btn" id="nextPageBtn">Next Page</button>
+    </div>
+
+    <!-- Data Table Container -->
+    <div class="data-table-container">
+        <table class="data-table" id="dataTable">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Delta</th>
+                    <th>Alert</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-section">
+        <button class="export-btn" id="exportDataBtn">Install Data (Download CSV)</button>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-label">Data Points</div>
+            <div class="status-value" id="statusPoints">0</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Status</div>
+            <div class="status-value" id="statusMsg">Ready to load data</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Last Updated</div>
+            <div class="status-value" id="statusTime">--:--:--</div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const loadDataBtn = document.getElementById('loadDataBtn');
+        const historyCanvas = document.getElementById('historyCanvas');
+        const historyCtx = historyCanvas.getContext('2d');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageInfo = document.getElementById('pageInfo');
+        const dataTableBody = document.getElementById('tableBody');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const statusPoints = document.getElementById('statusPoints');
+        const statusMsg = document.getElementById('statusMsg');
+        const statusTime = document.getElementById('statusTime');
+
+        // Data storage
+        let allData = { times: [], deltas: [], alerts: [] };
+        let displayedData = { times: [], deltas: [], alerts: [] };
+        let currentPage = 0;
+        const PAGE_SIZE = 100; // Number of data points per page
+
+        // Set default dates to today
+        const today = new Date().toISOString().split('T')[0];
+        startDateInput.value = today;
+        endDateInput.value = today;
+
+        // Update status UI
+        function setStatus(msg, type = 'neutral') {
+            statusMsg.textContent = msg;
+            statusMsg.className = 'status-value';
+            if (type === 'loaded') statusMsg.classList.add('loaded');
+            else if (type === 'error') statusMsg.classList.add('error');
+            else if (type === 'loading') statusMsg.classList.add('loading');
+            statusTime.textContent = new Date().toLocaleTimeString();
+        }
+
+        // Update history canvas
+        function updateHistoryCanvas() {
+            // Clear canvas
+            historyCtx.clearRect(0, 0, historyCanvas.width, historyCanvas.height);
+
+            // Get canvas dimensions
+            const width = historyCanvas.width;
+            const height = historyCanvas.height;
+            const centerY = height / 2;
+
+            // Draw background gradient
+            const gradient = historyCtx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(40,40,43,0.9)'); // dark bg
+            gradient.addColorStop(1, 'rgba(40,40,43,0.95)');
+            historyCtx.fillStyle = gradient;
+            historyCtx.fillRect(0, 0, width, height);
+
+            // If no data, show message and return
+            if (displayedData.times.length === 0) {
+                historyCtx.fillStyle = '#a0a0a0';
+                historyCtx.font = '16px Arial';
+                historyCtx.textAlign = 'center';
+                historyCtx.fillText('No data to display', width / 2, centerY);
+                return;
+            }
+
+            // Draw waveform
+            historyCtx.beginPath();
+            historyCtx.moveTo(0, centerY);
+
+            const scaleY = (height * 0.4) / Math.max(Math.max(...displayedData.deltas.map(Math.abs)), 1); // Use 40% of height for wave
+
+            for (let i = 0; i < displayedData.deltas.length; i++) {
+                const x = (i / Math.max(displayedData.deltas.length - 1, 1)) * width;
+                const y = centerY - (displayedData.deltas[i] * scaleY);
+
+                if (i === 0) {
+                    historyCtx.moveTo(x, y);
+                } else {
+                    historyCtx.lineTo(x, y);
+                }
+            }
+
+            // Stroke the wave
+            historyCtx.strokeStyle = '#ffffff';
+            historyCtx.lineWidth = 2;
+            historyCtx.stroke();
+
+            // Add glow effect
+            historyCtx.shadowColor = 'rgba(255,255,255,0.3)';
+            historyCtx.shadowBlur = 10;
+            historyCtx.stroke();
+            historyCtx.shadowBlur = 0;
+
+            // Draw center line
+            historyCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+            historyCtx.lineWidth = 1;
+            historyCtx.beginPath();
+            historyCtx.moveTo(0, centerY);
+            historyCtx.lineTo(width, centerY);
+            historyCtx.stroke();
+
+            // Draw grid lines (subtle)
+            historyCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+            historyCtx.lineWidth = 1;
+            for (let i = 1; i < 5; i++) {
+                const y = centerY + (i - 2) * (height * 0.1);
+                historyCtx.beginPath();
+                historyCtx.moveTo(0, y);
+                historyCtx.lineTo(width, y);
+                historyCtx.stroke();
+            }
+        }
+
+        // Update data table
+        function updateDataTable() {
+            // Clear table body
+            dataTableBody.innerHTML = '';
+
+            // Add rows for displayed data
+            displayedData.times.forEach((time, index) => {
+                const row = document.createElement('tr');
+
+                const timeCell = document.createElement('td');
+                timeCell.textContent = time;
+                row.appendChild(timeCell);
+
+                const deltaCell = document.createElement('td');
+                deltaCell.textContent = displayedData.deltas[index];
+                row.appendChild(deltaCell);
+
+                const alertCell = document.createElement('td');
+                alertCell.textContent = displayedData.alerts[index] === 1 ? 'YES' : 'NO';
+                alertCell.style.color = displayedData.alerts[index] === 1 ? '#ff6b6b' : var(--text);
+                row.appendChild(alertCell);
+
+                dataTableBody.appendChild(row);
+            });
+        }
+
+        // Update pagination info
+        function updatePagination() {
+            const totalPages = Math.max(1, Math.ceil(allData.times.length / PAGE_SIZE));
+            pageInfo.textContent = `Page: ${currentPage + 1} / ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 0;
+            nextPageBtn.disabled = currentPage >= totalPages - 1;
+        }
+
+        // Load data from server
+        async function loadData() {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!startDate || !endDate) {
+                setStatus('Please select both start and end dates', 'error');
+                return;
+            }
+
+            setStatus('Loading data...', 'loading');
+
+            try {
+                let url = '/history';
+                if (startDate && endDate) {
+                    const params = new URLSearchParams();
+                    params.set('start', startDate);
+                    params.set('end', endDate);
+                    url += '?' + params.toString();
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+
+                allData.times = data.times;
+                allData.deltas = data.deltas;
+                allData.alerts = data.alerts;
+
+                // Reset to first page
+                currentPage = 0;
+
+                // Update displayed data
+                updateDisplayedData();
+
+                // Update UI
+                setStatus(`Loaded ${allData.times.length} data points`, 'loaded');
+                statusPoints.textContent = allData.times.length;
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                setStatus('Failed to load data: ' + error.message, 'error');
+            }
+        }
+
+        // Update displayed data based on current page
+        function updateDisplayedData() {
+            const startIndex = currentPage * PAGE_SIZE;
+            const endIndex = Math.min(startIndex + PAGE_SIZE, allData.times.length);
+
+            displayedData.times = allData.times.slice(startIndex, endIndex);
+            displayedData.deltas = allData.deltas.slice(startIndex, endIndex);
+            displayedData.alerts = allData.alerts.slice(startIndex, endIndex);
+
+            updateHistoryCanvas();
+            updateDataTable();
+            updatePagination();
+        }
+
+        // Export data as CSV
+        function exportData() {
+            if (allData.times.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            // Create CSV content
+            let csvContent = 'timestamp,delta,alert\n';
+            for (let i = 0; i < allData.times.length; i++) {
+                csvContent += `${allData.times[i]},${allData.deltas[i]},${allData.alerts[i]}\n`;
+            }
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `vibration_export_${new Date().toISOString().slice(0,10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event Listeners
+        loadDataBtn.addEventListener('click', loadData);
+
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                updateDisplayedData();
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allData.times.length / PAGE_SIZE);
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                updateDisplayedData();
+            }
+        });
+
+        exportDataBtn.addEventListener('click', exportData);
+
+        // Initialize
+        function initialize() {
+            // Set canvas size
+            historyCanvas.width = historyCanvas.parentElement.clientWidth;
+            historyCanvas.height = 300;
+
+            // Initial canvas update
+            updateHistoryCanvas();
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                historyCanvas.width = historyCanvas.parentElement.clientWidth;
+                updateHistoryCanvas();
+            });
+        }
+
+        // Start everything
+        initialize();
+    </script>
+</body>
+</html>

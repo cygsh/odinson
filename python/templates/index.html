@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odinson Vibration Monitor</title>
+    <style>
+        :root {
+            --bg: #28282B;
+            --bg-panel: #323236;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent: #ffffff;
+            --border: #4a4a4a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 3rem 1.5rem 2rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, var(--accent), #cccccc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .developers {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .developers span {
+            margin: 0 0.5rem;
+        }
+
+        .nav-menu {
+            margin: 1.5rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .nav-menu a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-menu a:hover {
+            background: var(--bg-panel);
+        }
+
+        .waveform-container {
+            position: relative;
+            height: 200px;
+            margin: 2rem auto;
+            max-width: 900px;
+            background: var(--bg-panel);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        }
+
+        #waveformCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .content-section {
+            max-width: 900px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .content-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            position: relative;
+            display: inline-block;
+        }
+
+        .content-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .content-section p {
+            margin-bottom: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            background: var(--bg-panel);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1.5rem auto;
+            max-width: 900px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+
+        .status-item {
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .status-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-value.connected { color: var(--accent); }
+        .status-value.disconnected { color: #ff6b6b; }
+        .status-value.reconnecting { color: #ffd93d; }
+
+        .alert-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff6b6b;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(255,107,107,0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: none;
+        }
+
+        .alert-box.show {
+            display: block;
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .header .subtitle {
+                font-size: 1rem;
+            }
+            .nav-menu {
+                flex-wrap: wrap;
+            }
+            .status-bar {
+                flex-direction: column;
+            }
+            .status-item {
+                padding: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>Odinson</h1>
+        <p class="subtitle">Real-time Vibration & Seismic Activity Monitor</p>
+        <div class="developers">
+            Developed by:
+            <span>Yogesh</span>,
+            <span>Angel</span>,
+            <span>Tanjil</span>,
+            <span>Sashrika</span>
+        </div>
+        <nav class="nav-menu">
+            <a href="/">Live Monitor</a>
+            <a href="/history_view">View Past Data</a>
+        </nav>
+    </header>
+
+    <!-- Alert Box -->
+    <div id="alertBox" class="alert-box">
+        VIBRATION DETECTED!
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-label">Current Delta</div>
+            <div class="status-value" id="currentDelta">0.00</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Samples</div>
+            <div class="status-value" id="sampleCount">0</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">Connection</div>
+            <div class="status-value" id="connectionStatus">Connecting...</div>
+        </div>
+    </div>
+
+    <!-- Waveform Visualization -->
+    <div class="waveform-container">
+        <canvas id="waveformCanvas"></canvas>
+    </div>
+
+    <!-- About Section -->
+    <section class="content-section">
+        <h2>About the Project</h2>
+        <p>
+            The Odinson Vibration Monitor is a low-cost digital seismometer prototype that uses an MPU6050 accelerometer
+            to detect and analyze vibration patterns in real-time. The system processes three-axis acceleration data,
+            calculates a dynamic baseline, and triggers alerts when abnormal motion exceeds predefined thresholds.
+        </p>
+        <p>
+            Features include real-time waveform visualization, audible alerts, Telegram notifications, and CSV data logging
+            for post-event analysis. The monitoring system is designed for structural health monitoring, earthquake
+            early warning detection, and industrial vibration analysis.
+        </p>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        © 2026 Odinson Vibration Monitor | Built with Passion for Open Source Science
+    </footer>
+
+    <script>
+        // Configuration
+        const FETCH_INTERVAL_MS = 33; // 30Hz updates for responsive UI
+        const MAX_POINTS = 200;
+        const waveformColor = '#ffffff';
+        const waveformGlow = 'rgba(255,255,255,0.3)';
+
+        // DOM Elements
+        const alertBox = document.getElementById('alertBox');
+        const currentDeltaEl = document.getElementById('currentDelta');
+        const sampleCountEl = document.getElementById('sampleCount');
+        const connectionStatusEl = document.getElementById('connectionStatus');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const ctx = waveformCanvas.getContext('2d');
+
+        // Data buffers
+        let timeBuffer = [];
+        let deltaBuffer = [];
+        let latestDelta = 0;
+        let latestAlert = 0;
+        let isConnected = false;
+        let reconnectTimeout = null;
+        let lastUpdateTime = 0;
+
+        // Update connection status UI
+        function setConnectionStatus(status, type = 'neutral') {
+            if (connectionStatusEl) {
+                connectionStatusEl.textContent = status;
+                connectionStatusEl.className = 'status-value';
+                if (type === 'connected') connectionStatusEl.classList.add('connected');
+                else if (type === 'disconnected') connectionStatusEl.classList.add('disconnected');
+                else if (type === 'reconnecting') connectionStatusEl.classList.add('reconnecting');
+            }
+        }
+
+        // Fetch data from server
+        async function fetchData() {
+            try {
+                const [latestResp, bufferResp] = await Promise.all([
+                    fetch('/latest'),
+                    fetch('/buffer')
+                ]);
+
+                if (!latestResp.ok || !bufferResp.ok) {
+                    throw new Error(`HTTP error! status: ${latestResp.status} ${bufferResp.status}`);
+                }
+
+                const [latestData, bufferData] = await Promise.all([
+                    latestResp.json(),
+                    bufferResp.json()
+                ]);
+
+                // Update latest data
+                latestDelta = latestData.delta || 0;
+                latestAlert = latestData.alert || 0;
+                if (currentDeltaEl) currentDeltaEl.textContent = latestDelta.toFixed(2);
+                if (sampleCountEl) sampleCountEl.textContent = bufferData.deltas.length;
+
+                // Update buffers
+                timeBuffer = bufferData.times || [];
+                deltaBuffer = bufferData.deltas || [];
+
+                // Update connection status
+                if (!isConnected) {
+                    isConnected = true;
+                    setConnectionStatus('Connected', 'connected');
+                    clearTimeout(reconnectTimeout);
+                }
+
+                // Handle alert
+                if (latestAlert === 1) {
+                    alertBox.classList.add('show');
+                    setTimeout(() => alertBox.classList.remove('show'), 2000);
+                }
+
+                lastUpdateTime = performance.now();
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                isConnected = false;
+                setConnectionStatus('Disconnected', 'disconnected');
+                // Try to reconnect after a delay
+                if (!reconnectTimeout) {
+                    reconnectTimeout = setTimeout(() => {
+                        setConnectionStatus('Reconnecting...', 'reconnecting');
+                        reconnectTimeout = null;
+                    }, 1000);
+                }
+            }
+        }
+
+        // Render waveform using requestAnimationFrame for smooth rendering
+        function renderWaveform() {
+            // Clear canvas
+            ctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+
+            // Get canvas dimensions
+            const width = waveformCanvas.width;
+            const height = waveformCanvas.height;
+            const centerY = height / 2;
+
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(40,40,43,0.9)'); // dark bg
+            gradient.addColorStop(1, 'rgba(40,40,43,0.95)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // If no data, just return
+            if (deltaBuffer.length === 0) {
+                requestAnimationFrame(renderWaveform);
+                return;
+            }
+
+            // Draw waveform
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+
+            const scaleY = (height * 0.4) / Math.max(Math.max(...deltaBuffer.map(Math.abs)), 1); // Use 40% of height for wave
+
+            for (let i = 0; i < deltaBuffer.length; i++) {
+                const x = (i / Math.max(deltaBuffer.length - 1, 1)) * width;
+                const y = centerY - (deltaBuffer[i] * scaleY);
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            // Stroke the wave
+            ctx.strokeStyle = waveformColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Add glow effect
+            ctx.shadowColor = waveformGlow;
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Draw center line
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+
+            // Draw grid lines (subtle)
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 5; i++) {
+                const y = centerY + (i - 2) * (height * 0.1);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Request next frame
+            requestAnimationFrame(renderWaveform);
+        }
+
+        // Canvas resize handling
+        function resizeCanvas() {
+            waveformCanvas.width = waveformCanvas.parentElement.clientWidth;
+            waveformCanvas.height = waveformCanvas.parentElement.clientHeight;
+        }
+
+        // Initialize
+        function initialize() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Initial data fetch
+            fetchData();
+            setInterval(fetchData, FETCH_INTERVAL_MS);
+
+            // Start waveform rendering
+            requestAnimationFrame(renderWaveform);
+        }
+
+        // Start everything
+        initialize();
+    </script>
+</body>
+</html>
