@@ -1,0 +1,29 @@
+services:
+  odinson:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      ODINSON_MOCK: "true"          # no Arduino inside a container
+    volumes:
+      - ./logs:/app/logs
+
+  # Local AWS emulation — exercise the whole cloud bridge for $0, no account needed:
+  #   docker compose --profile aws up
+  # then in .env: ODINSON_AWS_ENABLED=true
+  #               ODINSON_AWS_ENDPOINT_URL=http://localstack:4566
+  #               ODINSON_DYNAMODB_TABLE=odinson-readings (create it in LocalStack first)
+  localstack:
+    image: localstack/localstack:latest
+    profiles: ["aws"]
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: dynamodb,sns,cloudwatch,s3
+    volumes:
+      - localstack-data:/var/lib/localstack
+
+volumes:
+  localstack-data:
