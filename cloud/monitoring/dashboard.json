@@ -1,0 +1,44 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "Vibration delta (average per minute)",
+        "namespace": "Odinson",
+        "metricName": "Delta",
+        "stat": "Average",
+        "period": 60,
+        "view": "timeSeries",
+        "stacked": false
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "title": "Alert events (sum per minute)",
+        "namespace": "Odinson",
+        "metricName": "Alert",
+        "stat": "Sum",
+        "period": 60,
+        "view": "timeSeries",
+        "stacked": false
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 6, "width": 24, "height": 6,
+      "properties": {
+        "title": "Vibration delta (max per minute, per device)",
+        "namespace": "Odinson",
+        "metricName": "Delta",
+        "stat": "Maximum",
+        "period": 60,
+        "view": "timeSeries",
+        "stacked": false,
+        "dimensions": [["device_id"]]
+      }
+    }
+  ]
+}

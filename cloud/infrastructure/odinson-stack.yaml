@@ -1,0 +1,217 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Odinson IoT vibration monitoring stack: DynamoDB time-series table, Lambda
+  ingest/query functions behind an API Gateway HTTP API, an AWS IoT Core topic
+  rule (for ESP32-class devices), an SNS alerts topic with email subscription,
+  a CloudWatch alarm on alert metrics, and an S3 bucket for CSV log archives.
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Email address that receives SNS vibration alerts (confirm the subscription email!)
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+    Description: Deployment environment tag
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 15
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref ReadingsTable
+        SNS_TOPIC_ARN: !Ref AlertsTopic
+        METRIC_NAMESPACE: Odinson
+        TTL_DAYS: 90
+
+Resources:
+  # ------------------------------------------------------------------ storage
+  ReadingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: odinson-readings
+      BillingMode: PAY_PER_REQUEST            # right size for a student budget: pay per write
+      AttributeDefinitions:
+        - AttributeName: device_id
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: S
+      KeySchema:
+        - AttributeName: device_id
+          KeyType: HASH
+        - AttributeName: ts
+          KeyType: RANGE
+      TimeToLiveSpecification:                 # auto-expire old readings after 90 days
+        AttributeName: expires_at
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: odinson
+        - Key: Environment
+          Value: !Ref Environment
+
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "odinson-logs-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration:          # buckets are private by default; keep it that way
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: archive-then-expire
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+            ExpirationInDays: 365
+      Tags:
+        - Key: Project
+          Value: odinson
+
+  # ------------------------------------------------------------------ alerts
+  AlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: odinson-alerts
+      DisplayName: Odinson Vibration Alerts
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+      Tags:
+        - Key: Project
+          Value: odinson
+
+  # ------------------------------------------------------------------ compute
+  IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: odinson-ingest
+      Description: Ingests readings from API Gateway or IoT Core into DynamoDB/SNS/CloudWatch
+      CodeUri: ../lambda/
+      Handler: ingest_handler.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReadingsTable
+        - SNSPublishPolicy:
+            TopicName: !GetAtt AlertsTopic.TopicName
+        - CloudWatchPutMetricPolicy: {}
+      Events:
+        PostReadings:
+          Type: Api
+          Properties:
+            Path: /readings
+            Method: post
+
+  QueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: odinson-query
+      Description: Serves historical readings from DynamoDB over the API
+      CodeUri: ../lambda/
+      Handler: query_handler.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ReadingsTable
+      Events:
+        GetReadings:
+          Type: Api
+          Properties:
+            Path: /readings
+            Method: get
+
+  # ESP32-class devices can publish straight to IoT Core; the rule forwards
+  # every message on odinson/<device_id>/readings to the ingest Lambda.
+  IoTIngestRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: odinson_ingest
+      TopicRulePayload:
+        AwsIotSqlVersion: "2016-03-23"
+        Sql: "SELECT *, topic(2) AS device_id FROM 'odinson/+/readings'"
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt IngestFunction.Arn
+
+  IoTInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref IngestFunction
+      Principal: iot.amazonaws.com
+
+  # ------------------------------------------------------------------ alarm
+  HighVibrationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: odinson-high-vibration
+      AlarmDescription: Any device reporting an alert-level vibration within a minute
+      # SEARCH() aggregates the Alert metric across all device_id dimensions.
+      Metrics:
+        - Id: alert_sum
+          Expression: SEARCH('{"Odinson"} MetricName="Alert"', 'Sum', 60)
+          ReturnData: true
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+      Tags:
+        - Key: Project
+          Value: odinson
+
+  # Free-tier guardrail: email via the alerts topic if estimated charges
+  # ever exceed USD 1, so a student account can never silently bill.
+  BillingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: odinson-billing-guardrail
+      AlarmDescription: EstimatedCharges above USD 1 — free-tier guardrail
+      Namespace: AWS/Billing
+      MetricName: EstimatedCharges
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      Statistic: Maximum
+      Period: 21600          # 6 hours
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertsTopic
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the readings HTTP API
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  IngestEndpoint:
+    Description: 'POST readings here (single object or {"readings": [...]})'
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/readings"
+  TableName:
+    Description: DynamoDB table for readings
+    Value: !Ref ReadingsTable
+  AlertsTopicArn:
+    Description: SNS topic ARN for vibration alerts (put this in .env as ODINSON_SNS_TOPIC_ARN)
+    Value: !Ref AlertsTopic
+  LogBucketName:
+    Description: S3 bucket for CSV archives (put this in .env as ODINSON_S3_BUCKET)
+    Value: !Ref LogBucket
+  IoTTopic:
+    Description: MQTT topic pattern devices should publish to
+    Value: odinson/<device_id>/readings
