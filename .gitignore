@@ -7,36 +7,36 @@ __pycache__/
 *.pyd
 .venv/
 venv/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # ===============================
-# Logs & Generated Data
+# Local data & secrets (never commit sensor data or credentials)
 # ===============================
+*.db
 *.csv
 *.log
-*.txt
+logs/
+.env
 
 # ===============================
-# Generated Plots / Images
-# ===============================
-*.png
-*.jpg
-
-# ===============================
-# Arduino Build Files
+# Arduino build artifacts
 # ===============================
 *.hex
 *.elf
 
 # ===============================
-# IDE / OS Files
+# IDE / OS files
 # ===============================
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# ===============================
-# Secrets (IMPORTANT)
-# ===============================
-.env
-config.py
+# Doc images are meant to be committed
+!docs/images/*.png
+!docs/images/*.jpg
