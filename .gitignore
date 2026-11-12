@@ -40,3 +40,6 @@ Thumbs.db
 # Doc images are meant to be committed
 !docs/images/*.png
 !docs/images/*.jpg
+
+# generated runtime data
+*.db
