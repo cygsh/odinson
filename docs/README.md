@@ -2,30 +2,31 @@
 
 ## Project Overview
 
-This project reads vibration data from an **MPU6050 sensor** using Arduino and monitors it with a **Python script**. Alerts are sent via **Telegram** when vibrations exceed defined thresholds.  
+Odinson reads vibration data from an **MPU6050** sensor via an **Arduino**, processes it in a
+**Python gateway** (adaptive-baseline detection, alerts, local web UI + SQLite/CSV), and can
+stream everything to **AWS** (DynamoDB, Lambda, API Gateway, SNS, CloudWatch, S3, IoT Core)
+provisioned with CloudFormation.
 
-The repository includes:
-- Arduino code to read sensor data.
-- Python scripts to monitor the data.
-- Documentation and structure to organize the project.
-
----
+- [Architecture & data flow](ARCHITECTURE.md)
+- [AWS deployment guide](AWS_DEPLOYMENT.md)
+- Main [README](../README.md) — quickstart, config, API, structure
 
 ## Hardware Setup (Arduino + MPU6050)
 
-1. Connect the **MPU6050 sensor** to your Arduino board.
-2. Open `arduino/mpu6050_reader.ino` in the **Arduino IDE**.
-3. Upload the code to the Arduino board.
-4. Make sure the Arduino is powered and connected via USB to your computer.
+1. Wire the MPU6050 over I2C: VCC→3.3V, GND→GND, SDA→SDA, SCL→SCL.
+2. Install the **MPU6050** library in the Arduino IDE.
+3. Upload `arduino/mpu6050_reader/mpu6050_reader.ino` (outputs JSON lines at 20 Hz, 115200 baud).
+4. Connect the Arduino via USB.
 
-> Optional: Include a wiring diagram here for clarity.
+> Optional: drop a wiring photo into `docs/images/wiring.png` — it is whitelisted in `.gitignore`.
 
----
-
-## Software Setup (Python Monitoring)
-
-1. Ensure **Python 3.x** is installed.
-2. Install required packages:
+## Software Setup
 
 ```bash
-pip install pyserial python-telegram-bot
+pip install -r requirements.txt
+cp .env.example .env        # then edit: serial port, thresholds, tokens, AWS ARNs
+python run.py --mock        # demo without hardware
+python run.py               # live hardware
+```
+
+Open http://localhost:5000 for the live monitor, `/history_view` for past data.
