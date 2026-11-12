@@ -482,7 +482,7 @@
 
                 const alertCell = document.createElement('td');
                 alertCell.textContent = displayedData.alerts[index] === 1 ? 'YES' : 'NO';
-                alertCell.style.color = displayedData.alerts[index] === 1 ? '#ff6b6b' : var(--text);
+                alertCell.style.color = displayedData.alerts[index] === 1 ? '#ff6b6b' : 'var(--text)';
                 row.appendChild(alertCell);
 
                 dataTableBody.appendChild(row);

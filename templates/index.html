@@ -12,6 +12,7 @@
             --text-muted: #a0a0a0;
             --accent: #ffffff;
             --border: #4a4a4a;
+            --success: #4caf50;
         }
 
         * {
@@ -165,6 +166,8 @@
         .status-value.connected { color: var(--accent); }
         .status-value.disconnected { color: #ff6b6b; }
         .status-value.reconnecting { color: #ffd93d; }
+        .status-value.aws-on { color: var(--success); }
+        .status-value.aws-off { color: var(--text-muted); }
 
         .alert-box {
             position: fixed;
@@ -220,7 +223,7 @@
     <!-- Header -->
     <header class="header">
         <h1>Odinson</h1>
-        <p class="subtitle">Real-time Vibration & Seismic Activity Monitor</p>
+        <p class="subtitle">Real-time Vibration &amp; Seismic Activity Monitor</p>
         <div class="developers">
             Developed by:
             <span>Yogesh</span>,
@@ -253,6 +256,14 @@
             <div class="status-label">Connection</div>
             <div class="status-value" id="connectionStatus">Connecting...</div>
         </div>
+        <div class="status-item">
+            <div class="status-label">Source</div>
+            <div class="status-value" id="sourceStatus">--</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">AWS Cloud</div>
+            <div class="status-value aws-off" id="awsStatus">Off</div>
+        </div>
     </div>
 
     <!-- Waveform Visualization -->
@@ -273,6 +284,13 @@
             for post-event analysis. The monitoring system is designed for structural health monitoring, earthquake
             early warning detection, and industrial vibration analysis.
         </p>
+        <p>
+            Readings are also streamed to <strong>AWS</strong> when the cloud bridge is enabled
+            (<code>ODINSON_AWS_ENABLED=true</code>): every sample lands in <strong>DynamoDB</strong>, alerts fire
+            <strong>SNS</strong> emails, metrics and alarms live in <strong>CloudWatch</strong>, and CSV logs are
+            archived to <strong>S3</strong> — all provisioned with the CloudFormation template in
+            <code>cloud/infrastructure/</code>.
+        </p>
     </section>
 
     <!-- Footer -->
@@ -292,6 +310,8 @@
         const currentDeltaEl = document.getElementById('currentDelta');
         const sampleCountEl = document.getElementById('sampleCount');
         const connectionStatusEl = document.getElementById('connectionStatus');
+        const sourceStatusEl = document.getElementById('sourceStatus');
+        const awsStatusEl = document.getElementById('awsStatus');
         const waveformCanvas = document.getElementById('waveformCanvas');
         const ctx = waveformCanvas.getContext('2d');
 
@@ -312,6 +332,30 @@
                 if (type === 'connected') connectionStatusEl.classList.add('connected');
                 else if (type === 'disconnected') connectionStatusEl.classList.add('disconnected');
                 else if (type === 'reconnecting') connectionStatusEl.classList.add('reconnecting');
+            }
+        }
+
+        // Poll /status for source mode + AWS bridge state (slower cadence than the waveform)
+        async function fetchStatus() {
+            try {
+                const resp = await fetch('/status');
+                if (!resp.ok) throw new Error('status http ' + resp.status);
+                const s = await resp.json();
+                if (sourceStatusEl) {
+                    sourceStatusEl.textContent = s.mode === 'mock' ? 'MOCK' : 'LIVE';
+                    sourceStatusEl.className = 'status-value ' + (s.mode === 'mock' ? 'reconnecting' : 'connected');
+                }
+                if (awsStatusEl) {
+                    if (s.aws_enabled) {
+                        awsStatusEl.textContent = s.aws_last_ok === false ? 'Error' : 'Synced';
+                        awsStatusEl.className = 'status-value ' + (s.aws_last_ok === false ? 'disconnected' : 'aws-on');
+                    } else {
+                        awsStatusEl.textContent = 'Off';
+                        awsStatusEl.className = 'status-value aws-off';
+                    }
+                }
+            } catch (e) {
+                // keep last known status
             }
         }
 
@@ -459,6 +503,10 @@
             // Initial data fetch
             fetchData();
             setInterval(fetchData, FETCH_INTERVAL_MS);
+
+            // Status (source mode + AWS bridge)
+            fetchStatus();
+            setInterval(fetchStatus, 2000);
 
             // Start waveform rendering
             requestAnimationFrame(renderWaveform);
