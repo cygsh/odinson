@@ -1,6 +1,6 @@
 # Odinson — IoT Vibration & Seismic Monitor
 
-[![CI](https://github.com/<your-github-username>/odinson/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-github-username>/odinson/actions/workflows/ci.yml)
+[![CI](https://github.com/<your-github-username>/odinson/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![AWS](https://img.shields.io/badge/AWS-DynamoDB%20%7C%20Lambda%20%7C%20API%20Gateway%20%7C%20SNS%20%7C%20S3%20%7C%20CloudWatch%20%7C%20IoT%20Core-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
