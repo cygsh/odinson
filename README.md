@@ -9,7 +9,7 @@ A low-cost digital seismometer: an **MPU6050** on an **Arduino** streams 3-axis 
 persists history, fires alerts — and ships everything to **AWS** (DynamoDB, Lambda, API Gateway, SNS,
 CloudWatch, S3, IoT Core), all provisioned as code with a single **CloudFormation** template.
 
-Built by Yogesh, Angel, Tanjil & Sashrika.
+Built by Yogesh
 
 ---
 
