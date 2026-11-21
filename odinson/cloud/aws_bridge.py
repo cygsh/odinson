@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import time
+from decimal import Decimal
 from pathlib import Path
 
 from ..config import Settings
@@ -75,7 +76,7 @@ class AWSBridge:
                         "device_id": device_id,
                         "ts": iso_timestamp,  # sort key (ISO-8601 UTC)
                         "timestamp": timestamp,
-                        "delta": round(delta, 4),
+                        "delta": Decimal(str(round(delta, 4))),
                         "alert": alert,
                         "source": source,
                         "expires_at": int(time.time()) + 90 * 24 * 3600,  # DynamoDB TTL

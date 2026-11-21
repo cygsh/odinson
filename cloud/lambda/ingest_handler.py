@@ -18,6 +18,7 @@ is needed beyond this file.
 import json
 import os
 import time
+from decimal import Decimal
 
 import boto3
 
@@ -44,7 +45,7 @@ def _record(body: dict) -> dict:
         "device_id": device_id,          # partition key
         "ts": ts,                        # sort key (ISO-8601 UTC)
         "timestamp": str(body.get("timestamp", "")),
-        "delta": float(body.get("delta", 0.0)),
+        "delta": Decimal(str(round(float(body.get("delta", 0.0)), 4))),
         "alert": int(bool(body.get("alert", 0))),
         "source": str(body.get("source", "iot")),
         "expires_at": int(time.time()) + TTL_DAYS * 86400,  # DynamoDB TTL

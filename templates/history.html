@@ -1,625 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Odinson Vibration Monitor - View Past Data</title>
-    <style>
-        :root {
-            --bg: #28282B;
-            --bg-panel: #323236;
-            --text: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --accent: #ffffff;
-            --border: #4a4a4a;
-            --success: #4caf50;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odinson · History</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    :root {
+      --bg:#0d0d0f; --bg-card:#141418; --bg-hover:#1c1c22;
+      --border:#2a2a35; --text:#e8e8f0; --muted:#6b6b80;
+      --accent:#7c6af7; --accent-dim:rgba(124,106,247,.15);
+      --green:#22d3a4; --green-dim:rgba(34,211,164,.12);
+      --red:#f75c6a; --red-dim:rgba(247,92,106,.15); --yellow:#f7b731;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;
+      border-bottom:1px solid var(--border);background:rgba(13,13,15,.85);
+      backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.2rem;letter-spacing:-.5px}
+    .logo-icon{width:32px;height:32px;border-radius:8px;
+      background:linear-gradient(135deg,var(--accent),#a78bfa);
+      display:flex;align-items:center;justify-content:center;font-size:1rem}
+    .nav-links{display:flex;gap:.25rem}
+    .nav-links a{padding:.45rem .9rem;border-radius:6px;text-decoration:none;
+      color:var(--muted);font-size:.9rem;font-weight:500;transition:all .15s}
+    .nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--bg-hover)}
+    .nav-links a.active{color:var(--accent)}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+    main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+    h1{font-size:1.5rem;font-weight:700;margin-bottom:.25rem}
+    .page-sub{color:var(--muted);font-size:.875rem;margin-bottom:1.5rem}
 
-        .header {
-            text-align: center;
-            padding: 2rem 1.5rem;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-        }
+    /* ── CONTROLS ── */
+    .controls{display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;
+      background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
+      padding:1.25rem;margin-bottom:1.5rem}
+    .ctrl-group{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:140px}
+    .ctrl-group label{font-size:.75rem;color:var(--muted);font-weight:500;
+      text-transform:uppercase;letter-spacing:.06em}
+    .ctrl-group input,.ctrl-group select{
+      background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      color:var(--text);padding:.55rem .75rem;font-size:.875rem;
+      font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+    .ctrl-group input:focus,.ctrl-group select:focus{border-color:var(--accent)}
+    .btn{padding:.6rem 1.2rem;border:none;border-radius:8px;font-size:.875rem;
+      font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#9080f9}
+    .btn-secondary{background:var(--bg-hover);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-green{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+    .btn-green:hover{background:rgba(34,211,164,.25)}
 
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, var(--accent), #cccccc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    /* ── STATS ── */
+    .h-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:.75rem;margin-bottom:1.5rem}
+    .h-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;
+      padding:.9rem 1rem}
+    .h-stat-label{font-size:.72rem;color:var(--muted);font-weight:500;
+      text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem}
+    .h-stat-val{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:600}
+    .c-accent{color:var(--accent)} .c-green{color:var(--green)}
+    .c-red{color:var(--red)}       .c-yellow{color:var(--yellow)}
 
-        .nav-back {
-            display: inline-block;
-            margin: 1rem 0;
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 500;
-        }
+    /* ── CHART ── */
+    .chart-card{background:var(--bg-card);border:1px solid var(--border);
+      border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+    .chart-header{display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:1rem}
+    .chart-title{font-size:.8rem;font-weight:600;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.08em}
+    canvas#histChart{width:100%;height:260px;display:block;border-radius:6px;background:var(--bg)}
 
-        .nav-back:hover {
-            text-decoration: underline;
-        }
+    /* ── TABLE ── */
+    .table-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .table-header{display:flex;align-items:center;justify-content:space-between;
+      padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+    .table-header h3{font-size:.8rem;font-weight:600;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.08em}
+    table{width:100%;border-collapse:collapse}
+    thead th{padding:.7rem 1rem;text-align:left;font-size:.75rem;font-weight:600;
+      color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+      background:var(--bg);border-bottom:1px solid var(--border)}
+    tbody td{padding:.7rem 1rem;font-size:.85rem;border-bottom:1px solid rgba(42,42,53,.5)}
+    tbody tr:hover td{background:var(--bg-hover)}
+    tbody tr:last-child td{border-bottom:none}
+    .mono{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+    .badge{padding:.18rem .55rem;border-radius:20px;font-size:.7rem;font-weight:600;
+      font-family:'JetBrains Mono',monospace}
+    .badge.alert-yes{background:var(--red-dim);color:var(--red)}
+    .badge.alert-no{background:var(--green-dim);color:var(--green)}
+    .delta-high{color:var(--red);font-weight:600}
+    .delta-mid{color:var(--yellow)}
+    .delta-low{color:var(--text)}
 
-        .controls-panel {
-            background: var(--bg-panel);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin: 1.5rem auto;
-            max-width: 900px;
-            border: 1px solid var(--border);
-        }
+    /* ── PAGINATION ── */
+    .pagination{display:flex;align-items:center;justify-content:center;
+      gap:.5rem;padding:1rem;border-top:1px solid var(--border);flex-wrap:wrap}
+    .pg-btn{padding:.4rem .8rem;border:1px solid var(--border);border-radius:6px;
+      background:var(--bg-hover);color:var(--text);cursor:pointer;font-size:.8rem;
+      transition:all .15s}
+    .pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+    .pg-btn:disabled{opacity:.35;cursor:not-allowed}
+    .pg-info{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted);
+      padding:0 .5rem}
 
-        .controls-panel h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    /* ── EMPTY STATE ── */
+    .empty{padding:3rem;text-align:center;color:var(--muted)}
+    .empty-icon{font-size:2.5rem;margin-bottom:.75rem}
+    .empty-msg{font-size:.9rem}
 
-        .controls-panel h2::before {
-            content: '📊';
-        }
-
-        .date-range {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .date-range label {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .date-range input[type="date"] {
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.9rem;
-        }
-
-        .btn-load {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            background: var(--accent);
-            color: var(--bg);
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-load:hover {
-            background: #e6e6e6;
-        }
-
-        .graph-container {
-            position: relative;
-            height: 300px;
-            margin: 2rem auto;
-            max-width: 900px;
-            background: var(--bg-panel);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        #historyCanvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .navigation-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin: 1rem 0;
-            flex-wrap: wrap;
-        }
-
-        .nav-btn {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background: var(--bg-panel);
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .nav-btn:hover {
-            background: var(--border);
-            color: var(--accent);
-        }
-
-        .nav-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .page-info {
-            font-family: 'Courier New', monospace;
-            color: var(--text-muted);
-        }
-
-        .data-table-container {
-            margin: 2rem auto;
-            max-width: 900px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--bg-panel);
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .data-table th {
-            background: var(--bg);
-            font-weight: 600;
-            color: var(--accent);
-            font-size: 0.9rem;
-        }
-
-        .data-table td {
-            font-size: 0.9rem;
-            color: var(--text);
-        }
-
-        .data-table tr:hover {
-            background: rgba(255,255,255,0.05);
-        }
-
-        .export-section {
-            text-align: center;
-            margin: 2rem 0;
-        }
-
-        .export-btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            background: var(--success);
-            color: var(--bg);
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .export-btn:hover {
-            background: #43a047;
-        }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-around;
-            background: var(--bg-panel);
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1.5rem auto;
-            max-width: 900px;
-            border: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 0.8rem;
-        }
-
-        .status-item {
-            text-align: center;
-            flex: 1;
-            min-width: 120px;
-        }
-
-        .status-label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 0.2rem;
-        }
-
-        .status-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--text);
-            font-family: 'Courier New', monospace;
-        }
-
-        .status-value.loaded { color: var(--success); }
-        .status-value.error { color: #ff6b6b; }
-        .status-value.loading { color: #ffd93d; }
-
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            .controls-panel {
-                padding: 1rem;
-            }
-            .date-range {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .navigation-controls {
-                flex-direction: column;
-            }
-            .data-table th,
-            .data-table td {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.85rem;
-            }
-        }
-    </style>
+    footer{text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;
+      border-top:1px solid var(--border);margin-top:3rem}
+    footer strong{color:var(--text)}
+    @media(max-width:768px){nav{padding:.75rem 1rem}main{padding:1.25rem 1rem}
+      .controls{flex-direction:column} .h-stats{grid-template-columns:repeat(2,1fr)}}
+  </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <h1>Odinson</h1>
-        <p class="subtitle">View Past Vibration Data</p>
-        <a href="/" class="nav-back">← Back to Live Monitor</a>
-    </header>
 
-    <!-- Controls Panel -->
-    <div class="controls-panel">
-        <h2>Data Selection</h2>
-        <div class="date-range">
-            <label for="startDate">Start Date:</label>
-            <input type="date" id="startDate">
-            <label for="endDate">End Date:</label>
-            <input type="date" id="endDate">
-            <button class="btn-load" id="loadDataBtn">Load Data</button>
-        </div>
+<nav>
+  <div class="logo"><div class="logo-icon">⚡</div>Odinson</div>
+  <div class="nav-links">
+    <a href="/">Live Monitor</a>
+    <a href="/history_view" class="active">History</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Vibration History</h1>
+  <p class="page-sub">Browse, filter, and export past sensor readings from local SQLite storage.</p>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Start Date</label>
+      <input type="date" id="startDate">
     </div>
-
-    <!-- Graph Container -->
-    <div class="graph-container">
-        <canvas id="historyCanvas"></canvas>
+    <div class="ctrl-group">
+      <label>End Date</label>
+      <input type="date" id="endDate">
     </div>
-
-    <!-- Navigation Controls -->
-    <div class="navigation-controls">
-        <button class="nav-btn" id="prevPageBtn">Previous Page</button>
-        <span class="page-info" id="pageInfo">Page: 0 / 0</span>
-        <button class="nav-btn" id="nextPageBtn">Next Page</button>
+    <div class="ctrl-group">
+      <label>Quick Range</label>
+      <select id="quickRange">
+        <option value="">Custom</option>
+        <option value="today" selected>Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="week">Last 7 days</option>
+      </select>
     </div>
-
-    <!-- Data Table Container -->
-    <div class="data-table-container">
-        <table class="data-table" id="dataTable">
-            <thead>
-                <tr>
-                    <th>Timestamp</th>
-                    <th>Delta</th>
-                    <th>Alert</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <!-- Data rows will be inserted here -->
-            </tbody>
-        </table>
+    <div class="ctrl-group">
+      <label>Limit</label>
+      <select id="limitSel">
+        <option value="500" selected>500 rows</option>
+        <option value="1000">1 000 rows</option>
+        <option value="5000">5 000 rows</option>
+      </select>
     </div>
+    <button class="btn btn-primary" id="loadBtn">Load Data</button>
+    <button class="btn btn-green" id="exportBtn">⬇ Export CSV</button>
+  </div>
 
-    <!-- Export Section -->
-    <div class="export-section">
-        <button class="export-btn" id="exportDataBtn">Install Data (Download CSV)</button>
+  <!-- STATS -->
+  <div class="h-stats">
+    <div class="h-stat"><div class="h-stat-label">Data Points</div><div class="h-stat-val c-accent" id="hPoints">0</div></div>
+    <div class="h-stat"><div class="h-stat-label">Alerts</div><div class="h-stat-val c-red" id="hAlerts">0</div></div>
+    <div class="h-stat"><div class="h-stat-label">Max Delta</div><div class="h-stat-val c-yellow" id="hMax">—</div></div>
+    <div class="h-stat"><div class="h-stat-label">Avg Delta</div><div class="h-stat-val c-green" id="hAvg">—</div></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Delta Over Time</div>
+      <div style="font-size:.75rem;color:var(--muted)" id="chartRange">No data loaded</div>
     </div>
+    <canvas id="histChart"></canvas>
+  </div>
 
-    <!-- Status Bar -->
-    <div class="status-bar">
-        <div class="status-item">
-            <div class="status-label">Data Points</div>
-            <div class="status-value" id="statusPoints">0</div>
-        </div>
-        <div class="status-item">
-            <div class="status-label">Status</div>
-            <div class="status-value" id="statusMsg">Ready to load data</div>
-        </div>
-        <div class="status-item">
-            <div class="status-label">Last Updated</div>
-            <div class="status-value" id="statusTime">--:--:--</div>
-        </div>
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Records</h3>
+      <span style="font-size:.8rem;color:var(--muted)" id="tableRange"></span>
     </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Delta</th>
+          <th>Alert</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="3"><div class="empty"><div class="empty-icon">📊</div>
+          <div class="empty-msg">Select a date range and click Load Data</div></div></td></tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <button class="pg-btn" id="prevBtn" disabled>← Prev</button>
+      <span class="pg-info" id="pgInfo">Page 0 / 0</span>
+      <button class="pg-btn" id="nextBtn" disabled>Next →</button>
+    </div>
+  </div>
+</main>
 
-    <script>
-        // DOM Elements
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
-        const loadDataBtn = document.getElementById('loadDataBtn');
-        const historyCanvas = document.getElementById('historyCanvas');
-        const historyCtx = historyCanvas.getContext('2d');
-        const prevPageBtn = document.getElementById('prevPageBtn');
-        const nextPageBtn = document.getElementById('nextPageBtn');
-        const pageInfo = document.getElementById('pageInfo');
-        const dataTableBody = document.getElementById('tableBody');
-        const exportDataBtn = document.getElementById('exportDataBtn');
-        const statusPoints = document.getElementById('statusPoints');
-        const statusMsg = document.getElementById('statusMsg');
-        const statusTime = document.getElementById('statusTime');
+<footer>&copy; 2026 <strong>Odinson</strong> · IoT Vibration & Seismic Monitor</footer>
 
-        // Data storage
-        let allData = { times: [], deltas: [], alerts: [] };
-        let displayedData = { times: [], deltas: [], alerts: [] };
-        let currentPage = 0;
-        const PAGE_SIZE = 100; // Number of data points per page
+<script>
+  const PAGE = 100;
+  let all = {times:[], deltas:[], alerts:[]};
+  let page = 0;
 
-        // Set default dates to today
-        const today = new Date().toISOString().split('T')[0];
-        startDateInput.value = today;
-        endDateInput.value = today;
+  // ── Date helpers ──
+  function isoDate(d) { return d.toISOString().split('T')[0]; }
+  const today    = isoDate(new Date());
+  const yday     = isoDate(new Date(Date.now() - 86400000));
+  const weekAgo  = isoDate(new Date(Date.now() - 7*86400000));
 
-        // Update status UI
-        function setStatus(msg, type = 'neutral') {
-            statusMsg.textContent = msg;
-            statusMsg.className = 'status-value';
-            if (type === 'loaded') statusMsg.classList.add('loaded');
-            else if (type === 'error') statusMsg.classList.add('error');
-            else if (type === 'loading') statusMsg.classList.add('loading');
-            statusTime.textContent = new Date().toLocaleTimeString();
-        }
+  document.getElementById('startDate').value = today;
+  document.getElementById('endDate').value   = today;
 
-        // Update history canvas
-        function updateHistoryCanvas() {
-            // Clear canvas
-            historyCtx.clearRect(0, 0, historyCanvas.width, historyCanvas.height);
+  document.getElementById('quickRange').addEventListener('change', e => {
+    const v = e.target.value;
+    if (v === 'today')     { document.getElementById('startDate').value = today; document.getElementById('endDate').value = today; }
+    if (v === 'yesterday') { document.getElementById('startDate').value = yday;  document.getElementById('endDate').value = yday; }
+    if (v === 'week')      { document.getElementById('startDate').value = weekAgo; document.getElementById('endDate').value = today; }
+  });
 
-            // Get canvas dimensions
-            const width = historyCanvas.width;
-            const height = historyCanvas.height;
-            const centerY = height / 2;
+  // ── Load ──
+  async function loadData() {
+    const start = document.getElementById('startDate').value;
+    const end   = document.getElementById('endDate').value;
+    const limit = document.getElementById('limitSel').value;
+    if (!start || !end) return;
 
-            // Draw background gradient
-            const gradient = historyCtx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, 'rgba(40,40,43,0.9)'); // dark bg
-            gradient.addColorStop(1, 'rgba(40,40,43,0.95)');
-            historyCtx.fillStyle = gradient;
-            historyCtx.fillRect(0, 0, width, height);
+    document.getElementById('loadBtn').textContent = 'Loading…';
+    try {
+      const r = await fetch(`/history?limit=${limit}`);
+      const d = await r.json();
+      all = { times: d.times||[], deltas: d.deltas||[], alerts: d.alerts||[] };
+      page = 0;
+      updateStats();
+      updateChart();
+      renderPage();
+    } catch(e) {
+      alert('Failed to load: ' + e.message);
+    } finally {
+      document.getElementById('loadBtn').textContent = 'Load Data';
+    }
+  }
 
-            // If no data, show message and return
-            if (displayedData.times.length === 0) {
-                historyCtx.fillStyle = '#a0a0a0';
-                historyCtx.font = '16px Arial';
-                historyCtx.textAlign = 'center';
-                historyCtx.fillText('No data to display', width / 2, centerY);
-                return;
-            }
+  function updateStats() {
+    const n = all.deltas.length;
+    document.getElementById('hPoints').textContent = n;
+    document.getElementById('hAlerts').textContent = all.alerts.filter(a=>a===1).length;
+    if (n) {
+      document.getElementById('hMax').textContent = Math.max(...all.deltas).toFixed(3);
+      document.getElementById('hAvg').textContent = (all.deltas.reduce((a,b)=>a+b,0)/n).toFixed(3);
+    } else {
+      document.getElementById('hMax').textContent = '—';
+      document.getElementById('hAvg').textContent = '—';
+    }
+  }
 
-            // Draw waveform
-            historyCtx.beginPath();
-            historyCtx.moveTo(0, centerY);
+  // ── Chart ──
+  function updateChart() {
+    const canvas = document.getElementById('histChart');
+    const ctx    = canvas.getContext('2d');
+    const dpr    = window.devicePixelRatio || 1;
+    const W      = canvas.parentElement.clientWidth - 2.5*16;
+    const H      = 260;
+    canvas.width  = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    ctx.scale(dpr, dpr);
 
-            const scaleY = (height * 0.4) / Math.max(Math.max(...displayedData.deltas.map(Math.abs)), 1); // Use 40% of height for wave
+    ctx.fillStyle = '#0d0d0f';
+    ctx.fillRect(0, 0, W, H);
 
-            for (let i = 0; i < displayedData.deltas.length; i++) {
-                const x = (i / Math.max(displayedData.deltas.length - 1, 1)) * width;
-                const y = centerY - (displayedData.deltas[i] * scaleY);
+    const data = all.deltas;
+    if (!data.length) {
+      ctx.fillStyle = '#6b6b80'; ctx.font = '13px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data loaded', W/2, H/2);
+      ctx.textAlign = 'left';
+      document.getElementById('chartRange').textContent = 'No data loaded';
+      return;
+    }
 
-                if (i === 0) {
-                    historyCtx.moveTo(x, y);
-                } else {
-                    historyCtx.lineTo(x, y);
-                }
-            }
+    document.getElementById('chartRange').textContent =
+      `${all.times[0] || ''} → ${all.times[all.times.length-1] || ''}`;
 
-            // Stroke the wave
-            historyCtx.strokeStyle = '#ffffff';
-            historyCtx.lineWidth = 2;
-            historyCtx.stroke();
+    const pad  = {t:20, r:20, b:30, l:50};
+    const iW   = W - pad.l - pad.r;
+    const iH   = H - pad.t - pad.b;
+    const yMax = Math.max(...data.map(Math.abs)) * 1.15 || 1;
 
-            // Add glow effect
-            historyCtx.shadowColor = 'rgba(255,255,255,0.3)';
-            historyCtx.shadowBlur = 10;
-            historyCtx.stroke();
-            historyCtx.shadowBlur = 0;
+    // grid
+    ctx.strokeStyle = 'rgba(255,255,255,.04)'; ctx.lineWidth = 1;
+    for (let i=0;i<=4;i++) {
+      const y = pad.t + (iH/4)*i;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+iW, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.25)';
+      ctx.font = '10px JetBrains Mono';
+      ctx.fillText((yMax - (yMax/4)*i).toFixed(1), 4, y+4);
+    }
 
-            // Draw center line
-            historyCtx.strokeStyle = 'rgba(255,255,255,0.1)';
-            historyCtx.lineWidth = 1;
-            historyCtx.beginPath();
-            historyCtx.moveTo(0, centerY);
-            historyCtx.lineTo(width, centerY);
-            historyCtx.stroke();
+    // alert zones
+    data.forEach((d, i) => {
+      if (all.alerts[i] !== 1) return;
+      const x = pad.l + (i/Math.max(data.length-1,1))*iW;
+      ctx.fillStyle = 'rgba(247,92,106,.15)';
+      ctx.fillRect(x-1, pad.t, 3, iH);
+    });
 
-            // Draw grid lines (subtle)
-            historyCtx.strokeStyle = 'rgba(255,255,255,0.05)';
-            historyCtx.lineWidth = 1;
-            for (let i = 1; i < 5; i++) {
-                const y = centerY + (i - 2) * (height * 0.1);
-                historyCtx.beginPath();
-                historyCtx.moveTo(0, y);
-                historyCtx.lineTo(width, y);
-                historyCtx.stroke();
-            }
-        }
+    // threshold
+    const ty = pad.t + iH*(1 - 150/yMax);
+    if (ty > pad.t && ty < pad.t+iH) {
+      ctx.setLineDash([5,4]);
+      ctx.strokeStyle = 'rgba(247,92,106,.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.l, ty); ctx.lineTo(pad.l+iW, ty); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(247,92,106,.7)'; ctx.font = '10px JetBrains Mono';
+      ctx.fillText('ALERT 150', pad.l+4, ty-3);
+    }
 
-        // Update data table
-        function updateDataTable() {
-            // Clear table body
-            dataTableBody.innerHTML = '';
+    // fill
+    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t+iH);
+    grad.addColorStop(0, 'rgba(124,106,247,.3)');
+    grad.addColorStop(1, 'rgba(124,106,247,0)');
+    ctx.beginPath();
+    ctx.moveTo(pad.l, pad.t+iH);
+    data.forEach((d,i)=>{
+      const x = pad.l+(i/Math.max(data.length-1,1))*iW;
+      const y = pad.t+iH*(1-Math.min(d,yMax)/yMax);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.lineTo(pad.l+iW, pad.t+iH);
+    ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 
-            // Add rows for displayed data
-            displayedData.times.forEach((time, index) => {
-                const row = document.createElement('tr');
+    // line
+    ctx.beginPath();
+    data.forEach((d,i)=>{
+      const x = pad.l+(i/Math.max(data.length-1,1))*iW;
+      const y = pad.t+iH*(1-Math.min(d,yMax)/yMax);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = '#7c6af7'; ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(124,106,247,.5)'; ctx.shadowBlur = 6;
+    ctx.stroke(); ctx.shadowBlur = 0;
 
-                const timeCell = document.createElement('td');
-                timeCell.textContent = time;
-                row.appendChild(timeCell);
+    // x-axis labels
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.font = '10px JetBrains Mono';
+    [0, Math.floor(data.length/2), data.length-1].forEach(i => {
+      if (!all.times[i]) return;
+      const x = pad.l+(i/Math.max(data.length-1,1))*iW;
+      ctx.fillText(all.times[i].slice(-8), x-18, H-6);
+    });
+  }
 
-                const deltaCell = document.createElement('td');
-                deltaCell.textContent = displayedData.deltas[index];
-                row.appendChild(deltaCell);
+  // ── Table ──
+  function renderPage() {
+    const start = page * PAGE;
+    const end   = Math.min(start + PAGE, all.times.length);
+    const slice = {
+      times:  all.times.slice(start, end),
+      deltas: all.deltas.slice(start, end),
+      alerts: all.alerts.slice(start, end),
+    };
 
-                const alertCell = document.createElement('td');
-                alertCell.textContent = displayedData.alerts[index] === 1 ? 'YES' : 'NO';
-                alertCell.style.color = displayedData.alerts[index] === 1 ? '#ff6b6b' : 'var(--text)';
-                row.appendChild(alertCell);
+    const tbody = document.getElementById('tableBody');
+    if (!slice.times.length) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty"><div class="empty-icon">🔍</div>
+        <div class="empty-msg">No records found</div></div></td></tr>`;
+    } else {
+      tbody.innerHTML = slice.times.map((t,i) => {
+        const d = slice.deltas[i];
+        const a = slice.alerts[i];
+        const dc = d > 15 ? 'delta-high' : d > 5 ? 'delta-mid' : 'delta-low';
+        return `<tr>
+          <td class="mono">${t}</td>
+          <td class="mono ${dc}">${typeof d==='number'?d.toFixed(4):d}</td>
+          <td><span class="badge ${a===1?'alert-yes':'alert-no'}">${a===1?'YES':'NO'}</span></td>
+        </tr>`;
+      }).join('');
+    }
 
-                dataTableBody.appendChild(row);
-            });
-        }
+    const total = Math.max(1, Math.ceil(all.times.length / PAGE));
+    document.getElementById('pgInfo').textContent   = `Page ${page+1} / ${total}`;
+    document.getElementById('prevBtn').disabled     = page === 0;
+    document.getElementById('nextBtn').disabled     = page >= total-1;
+    document.getElementById('tableRange').textContent =
+      all.times.length ? `Showing ${start+1}–${end} of ${all.times.length}` : '';
+  }
 
-        // Update pagination info
-        function updatePagination() {
-            const totalPages = Math.max(1, Math.ceil(allData.times.length / PAGE_SIZE));
-            pageInfo.textContent = `Page: ${currentPage + 1} / ${totalPages}`;
-            prevPageBtn.disabled = currentPage === 0;
-            nextPageBtn.disabled = currentPage >= totalPages - 1;
-        }
+  // ── Export ──
+  function exportCSV() {
+    if (!all.times.length) { alert('Load data first'); return; }
+    let csv = 'timestamp,delta,alert\n';
+    all.times.forEach((t,i) => csv += `${t},${all.deltas[i]},${all.alerts[i]}\n`);
+    const a   = document.createElement('a');
+    a.href    = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download= `odinson_export_${today}.csv`;
+    a.click();
+  }
 
-        // Load data from server
-        async function loadData() {
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
+  // ── Events ──
+  document.getElementById('loadBtn').addEventListener('click', loadData);
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
+  document.getElementById('prevBtn').addEventListener('click', () => { page--; renderPage(); });
+  document.getElementById('nextBtn').addEventListener('click', () => { page++; renderPage(); });
+  window.addEventListener('resize', updateChart);
 
-            if (!startDate || !endDate) {
-                setStatus('Please select both start and end dates', 'error');
-                return;
-            }
-
-            setStatus('Loading data...', 'loading');
-
-            try {
-                let url = '/history';
-                if (startDate && endDate) {
-                    const params = new URLSearchParams();
-                    params.set('start', startDate);
-                    params.set('end', endDate);
-                    url += '?' + params.toString();
-                }
-
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                const data = await response.json();
-
-                allData.times = data.times;
-                allData.deltas = data.deltas;
-                allData.alerts = data.alerts;
-
-                // Reset to first page
-                currentPage = 0;
-
-                // Update displayed data
-                updateDisplayedData();
-
-                // Update UI
-                setStatus(`Loaded ${allData.times.length} data points`, 'loaded');
-                statusPoints.textContent = allData.times.length;
-
-            } catch (error) {
-                console.error('Error loading data:', error);
-                setStatus('Failed to load data: ' + error.message, 'error');
-            }
-        }
-
-        // Update displayed data based on current page
-        function updateDisplayedData() {
-            const startIndex = currentPage * PAGE_SIZE;
-            const endIndex = Math.min(startIndex + PAGE_SIZE, allData.times.length);
-
-            displayedData.times = allData.times.slice(startIndex, endIndex);
-            displayedData.deltas = allData.deltas.slice(startIndex, endIndex);
-            displayedData.alerts = allData.alerts.slice(startIndex, endIndex);
-
-            updateHistoryCanvas();
-            updateDataTable();
-            updatePagination();
-        }
-
-        // Export data as CSV
-        function exportData() {
-            if (allData.times.length === 0) {
-                alert('No data to export');
-                return;
-            }
-
-            // Create CSV content
-            let csvContent = 'timestamp,delta,alert\n';
-            for (let i = 0; i < allData.times.length; i++) {
-                csvContent += `${allData.times[i]},${allData.deltas[i]},${allData.alerts[i]}\n`;
-            }
-
-            // Create blob and download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `vibration_export_${new Date().toISOString().slice(0,10)}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Event Listeners
-        loadDataBtn.addEventListener('click', loadData);
-
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 0) {
-                currentPage--;
-                updateDisplayedData();
-            }
-        });
-
-        nextPageBtn.addEventListener('click', () => {
-            const totalPages = Math.ceil(allData.times.length / PAGE_SIZE);
-            if (currentPage < totalPages - 1) {
-                currentPage++;
-                updateDisplayedData();
-            }
-        });
-
-        exportDataBtn.addEventListener('click', exportData);
-
-        // Initialize
-        function initialize() {
-            // Set canvas size
-            historyCanvas.width = historyCanvas.parentElement.clientWidth;
-            historyCanvas.height = 300;
-
-            // Initial canvas update
-            updateHistoryCanvas();
-
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                historyCanvas.width = historyCanvas.parentElement.clientWidth;
-                updateHistoryCanvas();
-            });
-        }
-
-        // Start everything
-        initialize();
-    </script>
+  // ── Auto-load today on open ──
+  loadData();
+</script>
 </body>
 </html>

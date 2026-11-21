@@ -22,6 +22,10 @@ htmlcov/
 *.log
 logs/
 .env
+deploy_aws.py
+deploy_aws_finish.py
+audit.py
+
 
 # ===============================
 # Arduino build artifacts
